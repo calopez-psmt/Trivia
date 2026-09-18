@@ -1,12 +1,23 @@
 const http = require('http');
+const fs = require('fs');
+const path = require('path');
 const WebSocket = require('ws');
 
 const PORT = process.env.PORT || 8088;
 
-// Servidor HTTP básico para que Render no devuelva error 426 al abrir la URL
+// Servidor HTTP que sirve el archivo index.html
 const server = http.createServer((req, res) => {
-    res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Servidor Trivia Help Desk Activo y Operando.');
+    let filePath = path.join(__dirname, 'index.html');
+    
+    fs.readFile(filePath, (err, content) => {
+        if (err) {
+            res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
+            res.end('Error interno: No se encuentra el archivo index.html');
+        } else {
+            res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+            res.end(content, 'utf-8');
+        }
+    });
 });
 
 // Adjuntamos el servidor WebSocket al mismo servidor HTTP
@@ -77,6 +88,6 @@ wss.on('connection', (ws) => {
 
 server.listen(PORT, () => {
     console.log(`===========================================`);
-    console.log(` Servidor Activo en puerto ${PORT}`);
+    console.log(` Servidor Web y WebSocket Activo en puerto ${PORT}`);
     console.log(`===========================================`);
 });
