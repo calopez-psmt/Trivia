@@ -124,23 +124,27 @@
         let currentQuestion = 0;
         let playersData = {};
 
-        const questions = [
-            { q: "1. Ejecutar 'ipconfig /flushdns' borra la caché de resoluciones DNS en Windows.", correct: 1 },
-            { q: "2. Un disco SSD requiere desfragmentación periódica para mantener velocidad.", correct: 0 },
-            { q: "3. El comando 'gpupdate /force' fuerza la actualización inmediata de GPO.", correct: 1 },
-            { q: "4. La IP 169.254.X.X (APIPA) indica un fallo al recibir respuesta del servidor DHCP.", correct: 1 },
-            { q: "5. Instalar dos antivirus activos en tiempo real incrementa el doble la protección.", correct: 0 },
-            { q: "6. El reinicio de un equipo soluciona gran parte de los fallos temporales de memoria.", correct: 1 },
-            { q: "7. El comando 'netstat -ano' muestra los puertos activos y el PID asociado.", correct: 1 },
-            { q: "8. Las señales Wi-Fi de 5 GHz tienen mayor alcance a través de muros que las de 2.4 GHz.", correct: 0 },
-            { q: "9. Cerrar aplicaciones colgadas desde el Administrador de Tareas puede corromper datos.", correct: 1 },
-            { q: "10. El comando 'sfc /scannow' analiza e intenta reparar archivos protegidos del sistema.", correct: 1 },
-            { q: "11. El atajo 'Win + Shift + Ctrl + B' reinicia el controlador gráfico en Windows.", correct: 1 },
-            { q: "12. Un ping exitoso a 127.0.0.1 confirma la salida correcta hacia el Gateway.", correct: 0 },
-            { q: "13. Un cable UTP Categoría 5e puede soportar velocidades de hasta 1 Gbps.", correct: 1 },
-            { q: "14. El error de 'Capa 8' hace referencia a problemas de interfaz o error humano.", correct: 1 },
-            { q: "15. La tecla 'Win + L' bloquea inmediatamente la sesión del usuario actual.", correct: 1 }
-        ];
+    const questions = [
+        { q: "1. Ejecutar 'ipconfig /flushdns' borra la caché de nombres de dominio en Windows.", correct: 1 },
+        { q: "2. Formatear un disco SSD acelera su rendimiento de la misma forma que a un disco HDD tradicional.", correct: 0 },
+        { q: "3. El comando 'gpupdate /force' aplica inmediatamente las Políticas de Grupo (GPO) sin necesidad de reiniciar.", correct: 1 },
+        { q: "4. Una dirección IP que inicia con 169.254.X.X (APIPA) significa que el equipo no logró comunicarse con el servidor DHCP.", correct: 1 },
+        { q: "5. Tener dos programas antivirus activos en tiempo real en Windows duplica la seguridad del sistema.", correct: 0 },
+        { q: "6. Los colaboradores siempre dirán que IT no hace nada.", correct: 1 },
+        { q: "7. La red Wi-Fi de 5 GHz atraviesa las paredes de la oficina con mayor facilidad que la red de 2.4 GHz.", correct: 0 },
+        { q: "8. El comando 'sfc /scannow' se utiliza para examinar e intentar reparar archivos de sistema corruptos en Windows.", correct: 1 },
+        { q: "9. Preguntarle al usuario '¿Ya probaste apagarlo y volverlo a encender?' está respaldado por la ciencia como la solución universal a los problemas de los equipos.", correct: 1 },
+        { q: "10. La herramienta 'Sysprep' sirve para desfragmentar el disco duro antes de instalar programas.", correct: 0 },
+        { q: "11. El comando 'ping 127.0.0.1' prueba el estado físico de la tarjeta de red (loopback) sin depender de la red externa.", correct: 1 },
+        { q: "12. La carpeta 'System32' en Windows se debe eliminar manualmente si el equipo presenta problemas de lentitud general.", correct: 0 },
+        { q: "13. La frase 'Yo no le moví a nada, la computadora amaneció así' es 100% verídica en el 99% de los casos.", correct: 0 },
+        { q: "14. La tecla de atajo 'Win + L' sirve para bloquear la sesión del usuario actual en Windows de forma inmediata.", correct: 1 },
+        { q: "15. Dentro de las herramientas de IA Generativa aprobadas de acuerdo a la Política Legal-006 de PriceSmart ChatGPT es la única autorizada'.", correct: 0 }
+        { q: "16. Dejar notas adhesivas con las contraseñas pegadas directamente en el monitor es una politica oficial de IT.", correct: 0 },
+        { q: "17. Decirle a un usuario 'déjame revisar' mientras buscas de emergencia en Google cómo solucionar un error desconocido es parte del protocolo estándar de IT.", correct: 1 },
+        { q: "18. En LDCOM el equipo de IT puede reestablecer una contraseña de un usuario", correct: 0 }
+
+    ];
 
         function connectSocket(onOpenCallback) {
             socket = new WebSocket(WS_URL);
