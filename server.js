@@ -1,11 +1,16 @@
+const http = require('http');
 const WebSocket = require('ws');
 
-// Render asigna el puerto automáticamente mediante process.env.PORT, por defecto usa el 8088 si se ejecuta localmente
-const PORT = process.env.PORT || 8088; 
+const PORT = process.env.PORT || 8088;
 
-const wss = new WebSocket.Server({ 
-    port: PORT 
+// Servidor HTTP básico para que Render no devuelva error 426 al abrir la URL
+const server = http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Servidor Trivia Help Desk Activo y Operando.');
 });
+
+// Adjuntamos el servidor WebSocket al mismo servidor HTTP
+const wss = new WebSocket.Server({ server });
 
 const rooms = {};
 
@@ -70,6 +75,8 @@ wss.on('connection', (ws) => {
     });
 });
 
-console.log(`===========================================`);
-console.log(` Servidor WebSocket Activo en puerto ${PORT}`);
-console.log(`===========================================`);
+server.listen(PORT, () => {
+    console.log(`===========================================`);
+    console.log(` Servidor Activo en puerto ${PORT}`);
+    console.log(`===========================================`);
+});
