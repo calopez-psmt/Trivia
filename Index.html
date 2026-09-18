@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Help Desk Live - Trivia Inter-Clubs</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #18181b; color: #f4f4f5; font-family: system-ui, -apple-system, sans-serif; }
+        .glass-panel { background: #27272a; border: 1px solid #3f3f46; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); }
+        .btn-primary { background-color: #2563eb; } .btn-primary:hover { background-color: #1d4ed8; }
+        .btn-success { background-color: #16a34a; } .btn-success:hover { background-color: #15803d; }
+        .btn-danger { background-color: #dc2626; } .btn-danger:hover { background-color: #b91c1c; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-4 md:p-8">
+
+    <header class="max-w-4xl w-full mx-auto text-center mb-6">
+        <h1 class="text-3xl font-extrabold text-teal-400 flex items-center justify-center gap-2">
+            🚨 Help Desk: Tablero de Control Inter-Clubs
+        </h1>
+        <p class="text-zinc-400 text-sm mt-1">Conexión WebSocket Cloud (Render)</p>
+    </header>
+
+    <main class="max-w-4xl w-full mx-auto flex-grow flex flex-col justify-center">
+
+        <!-- SETUP SCREEN -->
+        <div id="screen-setup" class="glass-panel p-6 md:p-8 rounded-xl text-center space-y-6">
+            <h2 class="text-xl font-bold text-zinc-200">¿Cómo vas a ingresar a la sesión?</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button type="button" onclick="initHost()" class="btn-primary text-white font-semibold py-4 px-6 rounded-lg shadow-md cursor-pointer">
+                    👑 Crear Sala (Host / Moderador)
+                </button>
+                <button type="button" onclick="showPlayerUI()" class="bg-zinc-700 hover:bg-zinc-600 text-white font-semibold py-4 px-6 rounded-lg cursor-pointer">
+                    🔗 Unirme a una Sala (Jugador)
+                </button>
+            </div>
+
+            <div id="player-form" class="hidden mt-6 p-4 bg-zinc-900/60 rounded-lg border border-zinc-700 text-left space-y-4">
+                <h3 class="text-md font-bold text-teal-400">Unirse a Sesión Existente</h3>
+                <div>
+                    <label class="block text-xs uppercase font-bold text-zinc-400 mb-1">Código de Sala (4 dígitos)</label>
+                    <input type="text" id="input-room-code" placeholder="Ej. 2368" maxlength="4" class="w-full bg-zinc-800 border border-zinc-600 rounded p-3 text-center text-xl font-mono text-white">
+                </div>
+                <div>
+                    <label class="block text-xs uppercase font-bold text-zinc-400 mb-1">Tu Nombre / Nickname</label>
+                    <input type="text" id="input-player-name" placeholder="Ej. Tech" class="w-full bg-zinc-800 border border-zinc-600 rounded p-3 text-white">
+                </div>
+                <button type="button" onclick="initPlayer()" class="w-full btn-primary font-bold py-3 text-white rounded-lg shadow cursor-pointer">
+                    Conectar
+                </button>
+                <div id="player-status-msg" class="text-sm font-semibold text-center text-amber-400"></div>
+            </div>
+        </div>
+
+        <!-- LOBBY SCREEN (HOST) -->
+        <div id="screen-lobby" class="hidden glass-panel p-8 rounded-xl text-center space-y-6">
+            <h2 class="text-lg font-bold text-zinc-300">Sala Lista para Recibir Jugadores</h2>
+            <div class="bg-zinc-900 border border-zinc-700 p-4 rounded-lg inline-block">
+                <span class="text-xs text-zinc-400 uppercase tracking-widest block mb-1">Código de Sala</span>
+                <span id="display-room-code" class="text-4xl font-extrabold text-teal-400 font-mono tracking-widest">----</span>
+            </div>
+            
+            <div class="border-t border-b border-zinc-700/60 py-4 my-4">
+                <h3 class="text-sm font-bold text-zinc-400 mb-2">Jugadores Conectados (<span id="player-count">0</span>):</h3>
+                <div id="lobby-player-list" class="flex flex-wrap justify-center gap-2">
+                    <span class="text-sm text-zinc-500 italic">Esperando jugadores...</span>
+                </div>
+            </div>
+
+            <button type="button" onclick="startGame()" class="btn-success text-white font-extrabold py-4 px-8 rounded-lg text-lg shadow-lg cursor-pointer">
+                🚀 ¡INICIAR TRIVIA HELP DESK!
+            </button>
+        </div>
+
+        <!-- GAME SCREEN -->
+        <div id="screen-game" class="hidden glass-panel p-6 md:p-8 rounded-xl text-center space-y-6">
+            <div class="flex justify-between items-center text-sm font-mono text-zinc-400 border-b border-zinc-700 pb-2">
+                <span>Pregunta <span id="current-q-num" class="text-teal-400 font-bold">1</span> / 15</span>
+                <span id="role-badge" class="px-2 py-0.5 rounded bg-zinc-800 text-xs">JUGADOR</span>
+            </div>
+
+            <h2 id="question-title" class="text-xl md:text-2xl font-bold text-white min-h-[80px] flex items-center justify-center">
+                Cargando pregunta...
+            </h2>
+
+            <!-- PLAYER CONTROLS -->
+            <div id="player-answers" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button type="button" onclick="submitAnswer(1)" class="btn-success text-white font-bold py-6 px-4 rounded-xl text-xl shadow-lg cursor-pointer">VERDADERO</button>
+                <button type="button" onclick="submitAnswer(0)" class="btn-danger text-white font-bold py-6 px-4 rounded-xl text-xl shadow-lg cursor-pointer">FALSO</button>
+            </div>
+
+            <div id="player-feedback" class="hidden text-center p-4 rounded-lg bg-zinc-900 border border-zinc-700 font-bold text-lg"></div>
+
+            <!-- HOST MONITORING -->
+            <div id="host-monitoring" class="hidden text-left bg-zinc-900 border border-zinc-700 p-4 rounded-lg space-y-3">
+                <div class="flex justify-between items-center border-b border-zinc-800 pb-2">
+                    <h3 class="text-xs uppercase tracking-wider font-bold text-teal-400">📊 Monitoreo de Respuestas</h3>
+                    <button type="button" onclick="nextQuestion()" class="btn-primary text-xs font-bold py-2 px-4 rounded cursor-pointer">Siguiente Pregunta ➔</button>
+                </div>
+                <div id="live-player-status" class="space-y-2"></div>
+            </div>
+        </div>
+
+        <!-- RESULTS SCREEN -->
+        <div id="screen-results" class="hidden glass-panel p-8 rounded-xl text-center space-y-6">
+            <h2 class="text-3xl font-extrabold text-amber-400">🏆 TABLA DE POSICIONES FINAL 🏆</h2>
+            <div id="final-scoreboard" class="space-y-3 max-w-md mx-auto text-left"></div>
+            <button type="button" onclick="location.reload()" class="btn-primary text-white font-bold py-3 px-6 rounded-lg cursor-pointer">🔄 Volver a Inicio</button>
+        </div>
+
+    </main>
+
+    <script>
+        // Detección automática del protocolo WebSocket para Render o local
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+        const WS_URL = `${wsProtocol}trivia-xrke.onrender.com`;
+
+        let socket = null;
+        let roomCode = "";
+        let isHost = false;
+        let myName = "";
+        let currentQuestion = 0;
+        let playersData = {};
+
+        const questions = [
+            { q: "1. Ejecutar 'ipconfig /flushdns' borra la caché de resoluciones DNS en Windows.", correct: 1 },
+            { q: "2. Un disco SSD requiere desfragmentación periódica para mantener velocidad.", correct: 0 },
+            { q: "3. El comando 'gpupdate /force' fuerza la actualización inmediata de GPO.", correct: 1 },
+            { q: "4. La IP 169.254.X.X (APIPA) indica un fallo al recibir respuesta del servidor DHCP.", correct: 1 },
+            { q: "5. Instalar dos antivirus activos en tiempo real incrementa el doble la protección.", correct: 0 },
+            { q: "6. El reinicio de un equipo soluciona gran parte de los fallos temporales de memoria.", correct: 1 },
+            { q: "7. El comando 'netstat -ano' muestra los puertos activos y el PID asociado.", correct: 1 },
+            { q: "8. Las señales Wi-Fi de 5 GHz tienen mayor alcance a través de muros que las de 2.4 GHz.", correct: 0 },
+            { q: "9. Cerrar aplicaciones colgadas desde el Administrador de Tareas puede corromper datos.", correct: 1 },
+            { q: "10. El comando 'sfc /scannow' analiza e intenta reparar archivos protegidos del sistema.", correct: 1 },
+            { q: "11. El atajo 'Win + Shift + Ctrl + B' reinicia el controlador gráfico en Windows.", correct: 1 },
+            { q: "12. Un ping exitoso a 127.0.0.1 confirma la salida correcta hacia el Gateway.", correct: 0 },
+            { q: "13. Un cable UTP Categoría 5e puede soportar velocidades de hasta 1 Gbps.", correct: 1 },
+            { q: "14. El error de 'Capa 8' hace referencia a problemas de interfaz o error humano.", correct: 1 },
+            { q: "15. La tecla 'Win + L' bloquea inmediatamente la sesión del usuario actual.", correct: 1 }
+        ];
+
+        function connectSocket(onOpenCallback) {
+            socket = new WebSocket(WS_URL);
+
+            socket.onopen = onOpenCallback;
+
+            socket.onerror = (err) => {
+                console.error("Error WebSocket:", err);
+                alert(`No se pudo conectar al servidor en ${WS_URL}. Verifica que el servicio esté activo en Render.`);
+            };
+
+            socket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+
+                if (data.type === 'PLAYER_JOINED') {
+                    playersData[data.name] = { name: data.name, score: 0, status: 'Conectado ⏳' };
+                    updateHostLobbyUI();
+                }
+                if (data.type === 'JOIN_ACK') {
+                    document.getElementById('screen-setup').classList.add('hidden');
+                    document.getElementById('screen-game').classList.remove('hidden');
+                    document.getElementById('player-answers').classList.add('hidden');
+                    document.getElementById('question-title').innerText = "¡Conectado! Esperando inicio del Host...";
+                }
+                if (data.type === 'PLAYER_ANSWERED') {
+                    if (playersData[data.name]) {
+                        if (data.isCorrect) {
+                            playersData[data.name].score += 100;
+                            playersData[data.name].status = 'Correcto ✅';
+                        } else {
+                            playersData[data.name].status = 'Incorrecto ❌';
+                        }
+                        updateHostLiveMonitoring();
+                    }
+                }
+                if (data.type === 'START_QUESTION') {
+                    showQuestionForPlayer(data.index);
+                }
+                if (data.type === 'GAME_OVER') {
+                    showFinalResults(data.scoreboard);
+                }
+                if (data.type === 'ERROR') {
+                    document.getElementById('player-status-msg').innerText = data.msg;
+                }
+            };
+        }
+
+        function showPlayerUI() { document.getElementById('player-form').classList.remove('hidden'); }
+
+        function initHost() {
+            isHost = true;
+            roomCode = Math.floor(1000 + Math.random() * 9000).toString();
+            
+            document.getElementById('display-room-code').innerText = roomCode;
+            document.getElementById('screen-setup').classList.add('hidden');
+            document.getElementById('screen-lobby').classList.remove('hidden');
+
+            connectSocket(() => {
+                socket.send(JSON.stringify({ type: 'CREATE_ROOM', roomCode: roomCode }));
+            });
+        }
+
+        function initPlayer() {
+            roomCode = document.getElementById('input-room-code').value.trim();
+            myName = document.getElementById('input-player-name').value.trim();
+            if (!roomCode || !myName) {
+                alert("Ingresa el código de sala y tu nombre.");
+                return;
+            }
+
+            document.getElementById('player-status-msg').innerText = "Conectando al servidor...";
+
+            connectSocket(() => {
+                socket.send(JSON.stringify({ type: 'JOIN_ROOM', roomCode: roomCode, name: myName }));
+            });
+        }
+
+        function updateHostLobbyUI() {
+            const list = Object.keys(playersData);
+            document.getElementById('player-count').innerText = list.length;
+            document.getElementById('lobby-player-list').innerHTML = list.map(p => 
+                `<span class="bg-zinc-800 border border-zinc-700 text-teal-300 text-sm font-semibold px-3 py-1 rounded-full">${p}</span>`
+            ).join('');
+        }
+
+        function startGame() {
+            document.getElementById('screen-lobby').classList.add('hidden');
+            document.getElementById('screen-game').classList.remove('hidden');
+            document.getElementById('host-monitoring').classList.remove('hidden');
+            document.getElementById('player-answers').classList.add('hidden');
+            document.getElementById('role-badge').innerText = "HOST / MODERADOR";
+
+            currentQuestion = 0;
+            sendQuestionToAll(0);
+        }
+
+        function sendQuestionToAll(index) {
+            Object.keys(playersData).forEach(p => playersData[p].status = 'Pensando... ⏳');
+            document.getElementById('current-q-num').innerText = index + 1;
+            document.getElementById('question-title').innerText = questions[index].q;
+            updateHostLiveMonitoring();
+
+            socket.send(JSON.stringify({
+                type: 'BROADCAST_TO_PLAYERS',
+                payload: { type: 'START_QUESTION', index: index }
+            }));
+        }
+
+        function showQuestionForPlayer(index) {
+            currentQuestion = index;
+            document.getElementById('current-q-num').innerText = index + 1;
+            document.getElementById('question-title').innerText = questions[index].q;
+
+            const ansBox = document.getElementById('player-answers');
+            document.getElementById('player-feedback').classList.add('hidden');
+            ansBox.classList.remove('hidden');
+            Array.from(ansBox.children).forEach(b => { b.disabled = false; b.style.opacity = '1'; });
+        }
+
+        function submitAnswer(ansValue) {
+            const isCorrect = (ansValue === questions[currentQuestion].correct);
+            const ansBox = document.getElementById('player-answers');
+            const feedback = document.getElementById('player-feedback');
+
+            Array.from(ansBox.children).forEach(b => { b.disabled = true; b.style.opacity = '0.4'; });
+            feedback.classList.remove('hidden');
+
+            if (isCorrect) {
+                feedback.innerText = "¡Correcto! 🎉 (+100 pts)";
+                feedback.className = "text-center p-4 rounded-lg bg-emerald-950 border border-emerald-600 text-emerald-300 font-bold text-lg";
+            } else {
+                feedback.innerText = "Incorrecto ❌";
+                feedback.className = "text-center p-4 rounded-lg bg-red-950 border border-red-600 text-red-300 font-bold text-lg";
+            }
+
+            socket.send(JSON.stringify({ type: 'SUBMIT_ANSWER', isCorrect: isCorrect }));
+        }
+
+        function updateHostLiveMonitoring() {
+            const container = document.getElementById('live-player-status');
+            const list = Object.values(playersData);
+            container.innerHTML = list.map(p => `
+                <div class="flex justify-between items-center bg-zinc-800 p-2.5 rounded border border-zinc-700 text-sm">
+                    <div><span class="font-bold text-zinc-200">${p.name}</span><span class="text-xs text-zinc-400 ml-2">Score: ${p.score || 0}</span></div>
+                    <span class="text-xs px-2 py-1 rounded bg-zinc-900 border border-zinc-700">${p.status || 'Conectado ⏳'}</span>
+                </div>
+            `).join('');
+        }
+
+        function nextQuestion() {
+            if (currentQuestion < questions.length - 1) {
+                currentQuestion++;
+                sendQuestionToAll(currentQuestion);
+            } else {
+                const scoreboard = Object.values(playersData).sort((a, b) => b.score - a.score);
+                socket.send(JSON.stringify({
+                    type: 'BROADCAST_TO_PLAYERS',
+                    payload: { type: 'GAME_OVER', scoreboard: scoreboard }
+                }));
+                showFinalResults(scoreboard);
+            }
+        }
+
+        function showFinalResults(scoreboard) {
+            document.getElementById('screen-game').classList.add('hidden');
+            document.getElementById('screen-results').classList.remove('hidden');
+            const container = document.getElementById('final-scoreboard');
+            if (!scoreboard) return;
+            container.innerHTML = scoreboard.map((p, i) => `
+                <div class="flex justify-between items-center bg-zinc-800 p-3 rounded-lg border border-zinc-700">
+                    <span class="font-bold text-lg ${i===0?'text-amber-400':(i===1?'text-zinc-300':'text-amber-700')}">#${i+1} ${p.name}</span>
+                    <span class="font-mono text-teal-300 font-extrabold">${p.score} pts</span>
+                </div>
+            `).join('');
+        }
+    </script>
+</body>
+</html>
